@@ -97,6 +97,8 @@ impl Contract {
     }
 
     pub fn deposit(env: Env, from: Address, to: Address, amount: i128) {
+        from.require_auth();
+
         if !storage::has_client(&env, &from) {
             panic!("Cliente no encontrado");
         }
@@ -114,9 +116,15 @@ impl Contract {
 
         contract_balance += amount;
         storage::write_contract_balance(&env, &contract_balance);
+
+        let mut to_balance = storage::read_recieve(&env, &to);
+        to_balance -= amount;
+        storage::write_recieve(&env, &to, &to_balance);
     }
 
     pub fn withdraw(env: Env, recieve: Address, amount: i128) {
+        recieve.require_auth();
+
         if !storage::has_recieve(&env, &recieve) {
             panic!("Recieve no encontrado");
         }
