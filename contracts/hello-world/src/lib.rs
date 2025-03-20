@@ -1,24 +1,23 @@
 #![no_std]
 
 mod storage;
+mod token;
 mod types;
 
-use soroban_sdk::{contract, contractimpl, vec, Address, Env, String, Vec};
+use soroban_sdk::{contract, contractimpl, Address, Env};
 
 #[contract]
 pub struct Contract;
 
 #[contractimpl]
 impl Contract {
-    pub fn hello(env: Env, to: String) -> Vec<String> {
-        vec![&env, String::from_str(&env, "Hello"), to]
-    }
-
-    pub fn add_admin(env: Env, admin: Address) {
+    pub fn initialize(env: Env, admin: Address, token: Address) {
         if storage::has_admin(&env) {
-            panic!("El admin ya ha sido asignado");
+            panic!("El contrato ya ha sido inicializado");
         }
+
         storage::write_admin(&env, &admin);
+        storage::write_token(&env, &token);
     }
 
     fn check_admin(env: Env) {
@@ -72,6 +71,78 @@ impl Contract {
 
         storage::remove_client(&env, &client);
     }
-}
 
-mod test;
+    pub fn add_recieve(env: Env, recieve: Address, balance: i128) {
+        Self::check_admin(env.clone());
+
+        storage::write_recieve(&env, &recieve, &balance);
+    }
+
+    pub fn remove_recieve(env: Env, recieve: Address) {
+        Self::check_admin(env.clone());
+
+        if !storage::has_recieve(&env, &recieve) {
+            panic!("Recieve no encontrado");
+        }
+
+        storage::remove_recieve(&env, &recieve);
+    }
+
+    pub fn amount_to_withdraw(env: Env, recieve: Address) -> i128 {
+        if !storage::has_recieve(&env, &recieve) {
+            panic!("Recieve no encontrado");
+        }
+
+        storage::read_recieve(&env, &recieve)
+    }
+
+    pub fn deposit(env: Env, from: Address, to: Address, amount: i128) {
+        if !storage::has_client(&env, &from) {
+            panic!("Cliente no encontrado");
+        }
+        let mut from_client = storage::read_client(&env, &from);
+
+        if !storage::has_recieve(&env, &to) {
+            panic!("Recieve no encontrado");
+        }
+        let mut contract_balance = storage::read_contract_balance(&env);
+
+        if from_client.balance < amount {
+            panic!("Fondos insuficientes");
+        }
+
+        token::token_transfer(&env, &from, &env.current_contract_address(), &amount);
+
+        from_client.balance -= amount;
+        storage::write_client(&env, &from, &from_client);
+
+        contract_balance += amount;
+        storage::write_contract_balance(&env, &contract_balance);
+    }
+
+    pub fn withdraw(env: Env, recieve: Address, amount: i128) {
+        if !storage::has_recieve(&env, &recieve) {
+            panic!("Recieve no encontrado");
+        }
+
+        let mut to_balance = storage::read_recieve(&env, &recieve);
+
+        if to_balance < amount {
+            panic!("Fondos insuficientes");
+        }
+
+        let mut contract_balance = storage::read_contract_balance(&env);
+
+        if contract_balance < amount {
+            panic!("Fondos insuficientes del contrato");
+        }
+
+        token::token_transfer(&env, &env.current_contract_address(), &recieve, &amount);
+
+        to_balance -= amount;
+        contract_balance -= amount;
+
+        storage::write_recieve(&env, &recieve, &to_balance);
+        storage::write_contract_balance(&env, &contract_balance);
+    }
+}

@@ -18,6 +18,9 @@ pub struct Client {
 #[derive(Clone)]
 #[contracttype]
 pub enum DataKey {
-    Admin, // Address
+    Admin,           // Address
+    Token,           // Address
+    ContractBalance, // i128
     Client(Address),
+    Recieve(Address), // balance: i128
 }

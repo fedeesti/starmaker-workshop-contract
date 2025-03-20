@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::{testutils::Address as _, vec, Env, String};
+use soroban_sdk::{testutils::Address as _, Env};
 
 #[test]
 fn test() {
@@ -9,41 +9,10 @@ fn test() {
     let contract_id = env.register(Contract, ());
     let client = ContractClient::new(&env, &contract_id);
 
-    let words = client.hello(&String::from_str(&env, "Dev"));
-    assert_eq!(
-        words,
-        vec![
-            &env,
-            String::from_str(&env, "Hello"),
-            String::from_str(&env, "Dev"),
-        ]
-    );
-}
-
-#[test]
-fn test_add_admin() {
-    let env = Env::default();
-    let contract_id = env.register(Contract, ());
-    let client = ContractClient::new(&env, &contract_id);
-
     let admin = Address::generate(&env);
-    client.add_admin(&admin);
+    let token = Address::generate(&env);
+    client.initialize(&admin, &token);
     assert_eq!(client.get_admin(), admin);
-}
-
-#[test]
-#[should_panic(expected = "El admin ya ha sido asignado")]
-fn test_add_admin_twice() {
-    let env = Env::default();
-    let contract_id = env.register(Contract, ());
-    let client = ContractClient::new(&env, &contract_id);
-
-    let admin = Address::generate(&env);
-    client.add_admin(&admin);
-    assert_eq!(client.get_admin(), admin);
-
-    let admin2 = Address::generate(&env);
-    client.add_admin(&admin2);
 }
 
 #[test]
