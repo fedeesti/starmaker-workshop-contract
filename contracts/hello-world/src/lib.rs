@@ -118,7 +118,7 @@ impl Contract {
         storage::write_contract_balance(&env, &contract_balance);
 
         let mut to_balance = storage::read_recieve(&env, &to);
-        to_balance -= amount;
+        to_balance += amount;
         storage::write_recieve(&env, &to, &to_balance);
     }
 
