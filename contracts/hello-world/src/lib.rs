@@ -107,10 +107,6 @@ impl Contract {
         }
         let mut contract_balance = storage::read_contract_balance(&env);
 
-        if from_client.balance < amount {
-            panic!("Fondos insuficientes");
-        }
-
         token::token_transfer(&env, &from, &env.current_contract_address(), &amount);
 
         from_client.balance -= amount;
@@ -146,3 +142,5 @@ impl Contract {
         storage::write_contract_balance(&env, &contract_balance);
     }
 }
+
+mod test;

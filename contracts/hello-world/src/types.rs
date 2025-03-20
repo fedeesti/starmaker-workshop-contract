@@ -19,7 +19,7 @@ pub struct Client {
 #[contracttype]
 pub enum DataKey {
     Admin,           // Address
-    Token,           // Address
+    Token,           // XLM Testnet Address
     ContractBalance, // i128
     Client(Address),
     Recieve(Address), // balance: i128
